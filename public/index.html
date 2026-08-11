@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistem Pencatatan Keuangan Angkringan</title>
+<style>
+  :root{
+    --cream:#FBF3EA;
+    --cream-2:#FDF8F2;
+    --panel:#FFFFFF;
+    --border:#EFE1D2;
+    --text:#2E2A26;
+    --text-soft:#8A8178;
+    --terracotta:#C9642B;
+    --terracotta-dark:#A8501F;
+    --teal:#154E4B;
+    --green-bg:#E4F2DE;
+    --green-text:#3B7A2A;
+    --red-bg:#FBE4E1;
+    --red-text:#C6432F;
+    --shadow:0 2px 6px rgba(60,40,20,0.06);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',-apple-system,BlinkMacSystemFont,sans-serif;}
+  body{background:var(--cream);color:var(--text);display:flex;min-height:100vh;}
+
+  /* --- TAMPILAN LAPTOP / DESKTOP (DEFAULT) --- */
+  .sidebar{
+    width:240px;background:var(--panel);border-right:1px solid var(--border);
+    display:flex;flex-direction:column;padding:20px;position:fixed;top:0;bottom:0;left:0;z-index:20;
+  }
+  .brand{display:flex;align-items:center;gap:10px;margin-bottom:30px;}
+  .brand-logo{font-size:22px;}
+  .brand-text h1{font-size:15px;color:var(--terracotta);font-weight:700;}
+  .brand-text p{font-size:10px;color:var(--text-soft);}
+  
+  .menu-list{display:flex;flex-direction:column;gap:6px;}
+  .menu-item{
+    display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:8px;
+    font-size:13.5px;color:var(--text-soft);cursor:pointer;text-decoration:none;font-weight:600;
+  }
+  .menu-item.active{background:var(--cream);color:var(--terracotta);}
+  .menu-item:hover{background:var(--cream-2);color:var(--text);}
+
+  .main-container{margin-left:240px;flex:1;padding:24px 32px;padding-bottom:40px;}
+  
+  .header-desktop{
+    display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;
+  }
+  .header-title h2{font-size:18px;font-weight:700;color:var(--text);}
+  .header-right{display:flex;align-items:center;gap:15px;}
+  .date-picker{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:13px;color:var(--text);}
+  .admin-profile{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;}
+  .admin-avatar{width:32px;height:32px;border-radius:50%;background:#F0C9A0;display:flex;align-items:center;justify-content:center;}
+
+  /* CARDS GRID LAPTOP */
+  .cards{display:grid;grid-template-columns:repeat(3, 1fr);gap:16px;margin-bottom:20px;}
+  .card{
+    background:var(--panel);border:1px solid var(--border);border-radius:12px;
+    padding:18px;box-shadow:var(--shadow);display:flex;justify-content:space-between;align-items:center;
+  }
+  .card.dark{background:var(--teal);color:#fff;border:none;}
+  .card-left{display:flex;align-items:center;gap:14px;}
+  .card-icon{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;}
+  .icon-in{background:#1B6B63;color:#fff;}
+  .icon-out{background:#E4894A;color:#fff;}
+  .icon-saldo{background:rgba(255,255,255,0.15);color:#F0C97A;}
+  .card-label{font-size:12px;color:var(--text-soft);margin-bottom:2px;}
+  .card.dark .card-label{color:#CFE4E1;}
+  .card-value{font-size:18px;font-weight:700;}
+
+  /* TABLE SECTION */
+  .table-section{
+    background:var(--panel);border:1px solid var(--border);border-radius:12px;
+    padding:20px;box-shadow:var(--shadow);margin-bottom:20px;
+  }
+  .table-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
+  .table-header h2{font-size:16px;font-weight:700;}
+  
+  table{width:100%;border-collapse:collapse;font-size:13.5px;}
+  thead th{background:#F5E4CE;text-align:left;color:#6b5f4f;padding:10px 14px;font-weight:600;}
+  thead th:first-child{border-radius:8px 0 0 8px;}
+  thead th:last-child{border-radius:0 8px 8px 0;}
+  tbody td{padding:12px 14px;border-bottom:1px solid #F2EAE0;color:#3a352f;}
+  
+  .pill{display:inline-block;padding:3px 10px;border-radius:12px;font-size:11.5px;font-weight:600;}
+  .pill-in{background:var(--green-bg);color:var(--green-text);}
+  .pill-out{background:var(--red-bg);color:var(--red-text);}
+  .nominal-in{color:var(--green-text);font-weight:600;}
+  .nominal-out{color:var(--red-text);font-weight:600;}
+  .action-link{color:#8a8178;cursor:pointer;}
+  .action-link.danger{color:var(--terracotta);font-weight:600;}
+  .empty-row td{text-align:center;color:var(--text-soft);padding:30px 0;}
+
+  .btn-primary{
+    background:var(--terracotta-dark);color:#fff;border:none;border-radius:8px;
+    padding:10px 18px;font-size:13.5px;font-weight:700;cursor:pointer;
+    box-shadow:0 3px 6px rgba(168,80,31,0.2);
+  }
+
+  /* BOTTOM NAV & MOBILE HEADER (DEFAULT HIDDEN DI LAPTOP) */
+  .header-mobile, .bottom-nav{display:none;}
+
+  /* --- PENGATURAN KHUSUS HP (MEDIA QUERY) --- */
+  @media(max-width: 768px){
+    body{display:block;padding-bottom:70px;}
+    .sidebar{display:none;} /* Sembunyikan sidebar samping di HP */
+    .main-container{margin-left:0;padding:16px;}
+    
+    /* Munculkan header khusus HP */
+    .header-desktop{display:none;}
+    .header-mobile{
+      background:var(--panel);padding:14px 16px;border-bottom:1px solid var(--border);
+      display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:30;
+    }
+    .brand-m-name{font-size:16px;font-weight:700;color:var(--terracotta);}
+    .brand-m-sub{font-size:9.5px;color:var(--text-soft);}
+    
+    /* Ubah kartu ringkasan jadi 1 kolom ke bawah */
+    .cards{display:flex;flex-direction:column;gap:10px;}
+    .card{padding:12px 16px;}
+    .card-value{font-size:16px;}
+
+    /* Tombol tambah full lebar di HP */
+    .table-header{flex-direction:column;align-items:flex-start;gap:10px;}
+    .btn-primary{width:100%;text-align:center;padding:12px;}
+
+    /* Munculkan menu navigasi bawah di HP */
+    .bottom-nav{
+      position:fixed;bottom:0;left:0;right:0;background:var(--panel);
+      border-top:1px solid var(--border);display:flex;justify-content:space-around;
+      padding:8px 0;z-index:40;box-shadow:0 -2px 10px rgba(0,0,0,0.03);
+    }
+    .nav-item{
+      display:flex;flex-direction:column;align-items:center;gap:2px;
+      font-size:10px;color:var(--text-soft);cursor:pointer;flex:1;
+    }
+    .nav-item.active{color:var(--terracotta-dark);font-weight:600;}
+    .nav-icon{font-size:16px;}
+  }
+
+  /* MODAL */
+  .overlay{position:fixed;inset:0;background:rgba(30,20,10,0.5);display:none;align-items:center;justify-content:center;z-index:50;}
+  .overlay.show{display:flex;}
+  .modal{background:#fff;border-radius:12px;padding:24px;width:100%;max-width:420px;box-shadow:0 10px 30px rgba(0,0,0,0.15);}
+  .modal h3{font-size:16px;margin-bottom:16px;}
+  .field{margin-bottom:12px;}
+  .field label{display:block;font-size:12px;color:#6b5f4f;margin-bottom:4px;font-weight:600;}
+  .field input, .field select{width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:13.5px;background:#FDFAF6;}
+  .type-toggle{display:flex;gap:8px;}
+  .type-btn{flex:1;padding:8px;border-radius:8px;border:1px solid var(--border);text-align:center;font-size:13px;font-weight:600;cursor:pointer;color:#8a8178;background:#FDFAF6;}
+  .type-btn.sel-in{background:var(--green-bg);color:var(--green-text);border-color:#bfe0ac;}
+  .type-btn.sel-out{background:var(--red-bg);color:var(--red-text);border-color:#f0b8ac;}
+  .modal-actions{display:flex;gap:8px;margin-top:16px;}
+  .btn{flex:1;padding:10px;border-radius:8px;font-size:13.5px;font-weight:700;cursor:pointer;border:none;}
+  .btn-cancel{background:#F1E9DE;color:#5b544c;}
+  .btn-save{background:var(--terracotta-dark);color:#fff;}
+
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(20px);background:#2E2A26;color:#fff;padding:10px 16px;border-radius:8px;font-size:12.5px;opacity:0;pointer-events:none;transition:all .25s;z-index:100;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR (Hanya tampil di Laptop/PC) -->
+<div class="sidebar">
+  <div class="brand">
+    <div class="brand-logo">☕</div>
+    <div class="brand-text">
+      <h1>Angkringan</h1>
+      <p>Cash Flow System</p>
+    </div>
+  </div>
+  <div class="menu-list">
+    <div class="menu-item active" data-page="dashboard"><span>🏠</span> Dashboard</div>
+    <div class="menu-item" data-page="laporan"><span>📊</span> Laporan</div>
+    <div class="menu-item" data-page="stok"><span>📦</span> Stok Barang</div>
+    <div class="menu-item" data-page="pengaturan"><span>⚙️</span> Pengaturan</div>
+  </div>
+</div>
+
+<!-- HEADER MOBILE (Hanya tampil di HP) -->
+<div class="header-mobile">
+  <div>
+    <div class="brand-m-name">Angkringan</div>
+    <div class="brand-m-sub">Cash Flow System</div>
+  </div>
+  <div style="display:flex; align-items:center; gap:8px;">
+    <input type="date" id="datePickerMobile" class="date-picker" style="padding:4px 8px; font-size:11px;">
+    <div class="admin-avatar" style="width:26px; height:26px; font-size:11px;">👤</div>
+  </div>
+</div>
+
+<!-- KONTEN UTAMA -->
+<div class="main-container">
+  <div id="dashboardPage">
+    <!-- Header Desktop -->
+    <div class="header-desktop">
+      <div class="header-title">
+        <h2>SISTEM PENCATATAN KEUANGAN ANGKRINGAN</h2>
+      </div>
+      <div class="header-right">
+        <input type="date" id="datePickerDesktop" class="date-picker">
+        <div class="admin-profile">
+          <div class="admin-avatar">👤</div>
+          <span>Admin Angkringan</span>
+        </div>
+      </div>
+    </div>
+    
+    <!-- CARDS RINGKASAN -->
+    <div class="cards">
+      <div class="card">
+        <div class="card-left">
+          <div class="card-icon icon-in">📈</div>
+          <div>
+            <div class="card-label">1. Total Pendapatan Hari Ini</div>
+            <div class="card-value" id="totalMasuk">Rp 0</div>
+          </div>
+        </div>
+        <span style="color:#3B7A2A; font-weight:bold; font-size:18px;">↑</span>
+      </div>
+
+      <div class="card">
+        <div class="card-left">
+          <div class="card-icon icon-out">⇄</div>
+          <div>
+            <div class="card-label">2. Total Pengeluaran Hari Ini</div>
+            <div class="card-value" id="totalKeluar">Rp 0</div>
+          </div>
+        </div>
+        <span style="color:#C6432F; font-weight:bold; font-size:18px;">↓</span>
+      </div>
+
+      <div class="card dark">
+        <div class="card-left">
+          <div class="card-icon icon-saldo">💰</div>
+          <div>
+            <div class="card-label">3. Saldo Akhir Kas</div>
+            <div class="card-value" id="totalSaldo">Rp 0</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABEL TRANSAKSI -->
+    <div class="table-section">
+      <div class="table-header">
+        <h2>Catatan Transaksi</h2>
+        <button class="btn-primary" id="openAdd">+ TAMBAH TRANSAKSI</button>
+      </div>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr><th>Waktu</th><th>Keterangan</th><th>Tipe</th><th>Nominal</th><th>Aksi</th></tr>
+          </thead>
+          <tbody id="transTable"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="otherPage" style="display:none; text-align:center; color:var(--text-soft); padding:40px; font-size:14px;"></div>
+</div>
+
+<!-- BOTTOM NAVIGATION BAR (Hanya tampil di HP) -->
+<div class="bottom-nav">
+  <div class="nav-item active" data-page="dashboard"><span class="nav-icon">🏠</span>Dashboard</div>
+  <div class="nav-item" data-page="laporan"><span class="nav-icon">📊</span>Laporan</div>
+  <div class="nav-item" data-page="stok"><span class="nav-icon">📦</span>Stok</div>
+  <div class="nav-item" data-page="pengaturan"><span class="nav-icon">⚙️</span>Pengaturan</div>
+</div>
+
+<!-- MODAL TAMBAH/EDIT -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h3 id="modalTitle">Tambah Transaksi</h3>
+    <form id="transForm">
+      <div class="field">
+        <label>Waktu</label>
+        <input type="time" id="fWaktu" required>
+      </div>
+      <div class="field">
+        <label>Keterangan</label>
+        <input type="text" id="fKeterangan" placeholder="Contoh: Nasi Kucing" required>
+      </div>
+      <div class="field">
+        <label>Tipe</label>
+        <div class="type-toggle">
+          <div class="type-btn" id="btnMasuk" data-type="masuk">Masuk</div>
+          <div class="type-btn" id="btnKeluar" data-type="keluar">Keluar</div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Nominal (Rp)</label>
+        <input type="number" id="fNominal" placeholder="0" min="0" required>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-cancel" id="cancelBtn">Batal</button>
+        <button type="submit" class="btn btn-save">Simpan</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let currentDate = new Date().toISOString().slice(0,10);
+let currentType = 'masuk';
+let editingId = null;
+let transactions = [];
+
+const datePickerDesktop = document.getElementById('datePickerDesktop');
+const datePickerMobile = document.getElementById('datePickerMobile');
+datePickerDesktop.value = currentDate;
+datePickerMobile.value = currentDate;
+
+function syncDate(val){
+  currentDate = val;
+  datePickerDesktop.value = val;
+  datePickerMobile.value = val;
+  loadTransactions(currentDate);
+}
+
+datePickerDesktop.addEventListener('change', (e)=> syncDate(e.target.value));
+datePickerMobile.addEventListener('change', (e)=> syncDate(e.target.value));
+
+const overlay = document.getElementById('overlay');
+const transForm = document.getElementById('transForm');
+const transTable = document.getElementById('transTable');
+const toast = document.getElementById('toast');
+
+function fmtRupiah(n){
+  return 'Rp ' + Math.round(n).toLocaleString('id-ID');
+}
+
+function showToast(msg){
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(()=>toast.classList.remove('show'), 2200);
+}
+
+async function loadTransactions(date){
+  try{
+    const res = await fetch(`/.netlify/functions/transaksi?date=${date}`);
+    if(res.ok){
+      const data = await res.json();
+      transactions = Array.isArray(data) ? data : [];
+    } else {
+      transactions = [];
+    }
+  }catch(e){
+    transactions = [];
+  }
+  renderAll();
+}
+
+async function saveTransactions(){
+  try{
+    await fetch(`/.netlify/functions/transaksi?date=${currentDate}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(transactions)
+    });
+  }catch(e){
+    showToast('Gagal menyimpan data ke server.');
+  }
+}
+
+function renderAll(){
+  transactions.sort((a,b)=> a.waktu.localeCompare(b.waktu));
+
+  let masuk = 0, keluar = 0;
+  transactions.forEach(t=>{
+    if(t.tipe === 'masuk') masuk += Number(t.nominal);
+    else keluar += Number(t.nominal);
+  });
+  document.getElementById('totalMasuk').textContent = fmtRupiah(masuk);
+  document.getElementById('totalKeluar').textContent = fmtRupiah(keluar);
+  document.getElementById('totalSaldo').textContent = fmtRupiah(masuk - keluar);
+
+  if(transactions.length === 0){
+    transTable.innerHTML = '<tr class="empty-row"><td colspan="5">Belum ada transaksi untuk tanggal ini. Tambahkan transaksi pertama.</td></tr>';
+    return;
+  }
+
+  transTable.innerHTML = transactions.map(t => `
+    <tr>
+      <td>${t.waktu}</td>
+      <td>${t.keterangan}</td>
+      <td><span class="pill ${t.tipe === 'masuk' ? 'pill-in' : 'pill-out'}">${t.tipe === 'masuk' ? 'Masuk' : 'Keluar'}</span></td>
+      <td class="${t.tipe === 'masuk' ? 'nominal-in' : 'nominal-out'}">${t.tipe === 'masuk' ? '+' : '-'}${fmtRupiah(t.nominal)}</td>
+      <td>
+        [<span class="action-link" onclick="openEdit('${t.id}')">Edit</span>
+        <span class="action-link danger" onclick="deleteTrans('${t.id}')">Hapus</span>]
+      </td>
+    </tr>
+  `).join('');
+}
+
+function openModal(title){
+  document.getElementById('modalTitle').textContent = title;
+  overlay.classList.add('show');
+}
+function closeModal(){
+  overlay.classList.remove('show');
+  transForm.reset();
+  editingId = null;
+  setType('masuk');
+}
+
+function setType(type){
+  currentType = type;
+  document.getElementById('btnMasuk').classList.toggle('sel-in', type === 'masuk');
+  document.getElementById('btnKeluar').classList.toggle('sel-out', type === 'keluar');
+}
+
+document.getElementById('btnMasuk').addEventListener('click', ()=>setType('masuk'));
+document.getElementById('btnKeluar').addEventListener('click', ()=>setType('keluar'));
+
+document.getElementById('openAdd').addEventListener('click', ()=>{
+  editingId = null;
+  transForm.reset();
+  const now = new Date();
+  document.getElementById('fWaktu').value = now.toTimeString().slice(0,5);
+  setType('masuk');
+  openModal('Tambah Transaksi');
+});
+
+document.getElementById('cancelBtn').addEventListener('click', closeModal);
+overlay.addEventListener('click', (e)=>{ if(e.target === overlay) closeModal(); });
+
+window.openEdit = function(id){
+  const t = transactions.find(x => x.id === id);
+  if(!t) return;
+  editingId = id;
+  document.getElementById('fWaktu').value = t.waktu;
+  document.getElementById('fKeterangan').value = t.keterangan;
+  document.getElementById('fNominal').value = t.nominal;
+  setType(t.tipe);
+  openModal('Edit Transaksi');
+};
+
+window.deleteTrans = async function(id){
+  if(!confirm('Hapus transaksi ini?')) return;
+  transactions = transactions.filter(t => t.id !== id);
+  await saveTransactions();
+  renderAll();
+  showToast('Transaksi dihapus');
+};
+
+transForm.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const waktu = document.getElementById('fWaktu').value;
+  const keterangan = document.getElementById('fKeterangan').value.trim();
+  const nominal = Number(document.getElementById('fNominal').value);
+
+  if(!waktu || !keterangan || !nominal || nominal <= 0){
+    showToast('Lengkapi semua data dengan benar');
+    return;
+  }
+
+  if(editingId){
+    const idx = transactions.findIndex(t => t.id === editingId);
+    if(idx > -1){
+      transactions[idx] = { ...transactions[idx], waktu, keterangan, tipe: currentType, nominal };
+    }
+    showToast('Transaksi diperbarui');
+  }else{
+    transactions.push({
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2,6),
+      waktu, keterangan, tipe: currentType, nominal
+    });
+    showToast('Transaksi ditambahkan');
+  }
+
+  await saveTransactions();
+  renderAll();
+  closeModal();
+});
+
+// Navigasi Handling (Desktop & Mobile)
+const menuItems = document.querySelectorAll('.menu-item, .nav-item');
+const dashboardPage = document.getElementById('dashboardPage');
+const otherPage = document.getElementById('otherPage');
+const pageTexts = {
+  laporan: 'Halaman Laporan Keuangan sedang dalam tahap pengembangan.',
+  stok: 'Halaman Manajemen Stok Barang sedang dalam tahap pengembangan.',
+  pengaturan: 'Halaman Pengaturan Sistem sedang dalam tahap pengembangan.'
+};
+
+menuItems.forEach(item=>{
+  item.addEventListener('click', ()=>{
+    const page = item.dataset.page;
+    menuItems.forEach(i => {
+      if(i.dataset.page === page) i.classList.add('active');
+      else i.classList.remove('active');
+    });
+
+    if(page === 'dashboard'){
+      dashboardPage.style.display = 'block';
+      otherPage.style.display = 'none';
+    } else {
+      dashboardPage.style.display = 'none';
+      otherPage.style.display = 'block';
+      otherPage.textContent = pageTexts[page];
+    }
+  });
+});
+
+loadTransactions(currentDate);
+</script>
+</body>
+</html>
+
