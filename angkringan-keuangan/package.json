@@ -1,9 +1,0 @@
-{
-  "name": "angkringan-keuangan",
-  "version": "1.0.0",
-  "description": "Sistem Pencatatan Keuangan Angkringan",
-  "main": "index.js",
-  "dependencies": {
-    "@octokit/rest": "^20.0.2"
-  }
-}
